@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Real-time Cloud Detector ☁️</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; display: flex; flex-direction: column; align-items: center; background-color: #e6f7ff; color: #333; }
+        video { border: 5px solid #0056b3; border-radius: 10px; margin-top: 20px; transform: scaleX(-1); }
+        #result-container { margin-top: 20px; padding: 20px; background-color: white; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: center; }
+        #prediction { font-size: 2em; font-weight: bold; color: #0056b3; }
+        #confidence { font-size: 1.2em; color: #555; margin-top: 5px; }
+        #timer { font-size: 1em; color: #888; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <h1>Real-time Cloud Detector</h1>
+    <video id="webcam" width="640" height="480" autoplay muted playsinline></video>
+    <div id="result-container">
+        <div id="prediction">Initializing...</div>
+        <div id="confidence"></div>
+        <div id="timer">Next prediction in 10s</div>
+    </div>
+    <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+
+    <script>
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const predictionDiv = document.getElementById('prediction');
+        const confidenceDiv = document.getElementById('confidence');
+        const timerDiv = document.getElementById('timer');
+
+        // --- 1. Access Webcam ---
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+                // Start the prediction loop once the camera is ready
+                startPredictionLoop();
+            })
+            .catch(err => {
+                console.error("Error accessing webcam: ", err);
+                predictionDiv.innerText = "Error: Webcam access denied.";
+            });
+
+        // --- 2. Prediction Function ---
+        function getPrediction() {
+            context.drawImage(video, 0, 0, 640, 480);
+            const imageData = canvas.toDataURL('image/jpeg');
+
+            fetch('http://localhost:5000/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: imageData }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                predictionDiv.innerText = data.prediction;
+                confidenceDiv.innerText = `Confidence: ${data.confidence}`;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                predictionDiv.innerText = "Prediction Error";
+            });
+        }
+
+        // --- 3. Prediction and Countdown Loop ---
+        function startPredictionLoop() {
+            // Immediately get the first prediction
+            getPrediction();
+
+            // Then, set up a loop to predict every 10 seconds
+            setInterval(getPrediction, 10000);
+
+            // Set up a separate loop for the countdown timer UI
+            let countdown = 10;
+            setInterval(() => {
+                countdown--;
+                if (countdown <= 0) {
+                    countdown = 10; // Reset timer
+                }
+                timerDiv.innerText = `Next prediction in ${countdown}s`;
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
