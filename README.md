@@ -1,7 +1,4 @@
-# CloudClassifier
-Of course. Here is a comprehensive README file for your GitHub project. You can copy and paste this into a file named `README.md` in your project's main directory.
 
------
 
 # ☁️ Real-Time Cloud Classifier
 
@@ -98,6 +95,3 @@ To run this application on your own machine, follow these steps:
 
 -----
 
-## 📜 License
-
-This project is licensed under the MIT License. See the `LICENSE` file for details.
